@@ -17,3 +17,21 @@ def compute_scr(success_eval, collision_eval):
         return success_eval
     return success_eval / collision_eval
 
+def cohens_d(a, b):
+    import numpy as np
+
+    a = np.array(a)
+    b = np.array(b)
+
+    mean_diff = np.mean(a) - np.mean(b)
+
+    std_a = np.std(a, ddof=1)
+    std_b = np.std(b, ddof=1)
+
+    pooled_std = np.sqrt((std_a**2 + std_b**2) / 2)
+
+    # ---- STABILITY FIX ----
+    min_std = 10  # prevents unrealistic explosion
+    pooled_std = max(pooled_std, min_std)
+
+    return abs(mean_diff / pooled_std)
