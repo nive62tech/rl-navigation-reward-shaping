@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from src.train import train
 
 # =========================
 # CONFIGURATIONS
@@ -53,34 +54,19 @@ def create_result_folder(algo, shaping):
 # EXPERIMENT FUNCTION
 # =========================
 def run_experiment(algo, shaping, seed):
-    print(f"\nRunning: {algo} | {shaping} | Seed {seed}")
+    print(f"Running: {algo} | {shaping} | Seed {seed}")
 
-    # Set seed
     set_seed(seed)
 
-    # Create result folder
+    # ✅ ADD THIS BACK
     folder = create_result_folder(algo, shaping)
 
-    # ---- PLACEHOLDER DATA (Phase 2 will replace this) ----
-    success_history = np.random.randint(0, 2, size=2000).tolist()
-    reward_history = np.random.randn(2000).tolist()
-    loss_history = np.abs(np.random.randn(5000)).tolist()
+    # ✅ TRAIN
+    logger = train(algo, shaping, seed)
 
-    success_eval = np.random.randint(100, 200)
-    collision_eval = np.random.randint(1, 50)
-    # -----------------------------------------------------
-
-    # Save results
+    # ✅ SAVE
     save_path = os.path.join(folder, f"seed_{seed}.npz")
-
-    np.savez(
-        save_path,
-        success=success_history,
-        reward=reward_history,
-        loss=loss_history,
-        success_eval=success_eval,
-        collision_eval=collision_eval
-    )
+    logger.save(save_path)
 
     print(f"Saved: {save_path}")
 
