@@ -100,7 +100,7 @@ def run_one(arch='dqn', shaping='baseline', seed=1,
         ep_losses.append(np.mean(ep_loss) if ep_loss else 0.0)
 
         # Convergence episode: first time rolling avg >= 85%
-        if ce == n_episodes and len(success_window) == 50 and rolling >= 0.50:
+        if ce == n_episodes and len(success_window) == 50 and rolling >= 0.60:
             ce = ep
 
         # Last 200 episodes
