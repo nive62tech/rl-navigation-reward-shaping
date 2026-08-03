@@ -1,5 +1,8 @@
 """
-agent.py - DQN and DDQN with smaller network for 6-dim observation
+agent.py
+========
+DQN and DDQN using exact same network and training logic
+as test_basic.py which confirmed learning works.
 """
 import random
 import numpy as np
@@ -14,46 +17,51 @@ class QNetwork(nn.Module):
     def __init__(self, obs_dim, n_actions=4):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(obs_dim, 64),  nn.ReLU(),
-            nn.Linear(64, 64),       nn.ReLU(),
+            nn.Linear(obs_dim, 64), nn.ReLU(),
+            nn.Linear(64, 64),      nn.ReLU(),
             nn.Linear(64, n_actions)
         )
-        for layer in self.modules():
-            if isinstance(layer, nn.Linear):
-                nn.init.kaiming_normal_(layer.weight, nonlinearity='relu')
-                nn.init.zeros_(layer.bias)
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+                nn.init.zeros_(m.bias)
 
     def forward(self, x):
         return self.net(x)
 
 
 class ReplayBuffer:
-    def __init__(self, capacity=10_000):
-        self.buffer = deque(maxlen=capacity)
+    def __init__(self, capacity=5000):
+        self.buf = deque(maxlen=capacity)
 
-    def push(self, state, action, reward, next_state, done):
-        self.buffer.append((state, action, reward, next_state, done))
+    def push(self, s, a, r, s2, done):
+        self.buf.append((
+            torch.FloatTensor(s),
+            a, r,
+            torch.FloatTensor(s2),
+            done
+        ))
 
     def sample(self, batch_size):
-        batch = random.sample(self.buffer, batch_size)
+        batch       = random.sample(self.buf, batch_size)
         s, a, r, s2, d = zip(*batch)
         return (
-            torch.FloatTensor(np.array(s)),
+            torch.stack(s),
             torch.LongTensor(a),
             torch.FloatTensor(r),
-            torch.FloatTensor(np.array(s2)),
+            torch.stack(s2),
             torch.FloatTensor(d),
         )
 
     def __len__(self):
-        return len(self.buffer)
+        return len(self.buf)
 
 
 class DQNAgent:
     def __init__(self, obs_dim, n_actions=4, arch='dqn',
-                 lr=5e-3, gamma=0.99, batch_size=64,
-                 buffer_size=10_000, target_update=200,
-                 eps_start=1.0, eps_end=0.05, eps_decay=0.997):
+                 lr=1e-2, gamma=0.99, batch_size=64,
+                 buffer_size=5000, target_update=100,
+                 eps_start=1.0, eps_end=0.05, eps_decay=0.995):
 
         self.arch          = arch
         self.gamma         = gamma
@@ -78,11 +86,11 @@ class DQNAgent:
         if random.random() < self.eps:
             return random.randint(0, self.n_actions - 1)
         with torch.no_grad():
-            q = self.online(torch.FloatTensor(state).unsqueeze(0))
-            return q.argmax().item()
+            s = torch.FloatTensor(state).unsqueeze(0)
+            return self.online(s).argmax().item()
 
     def store(self, state, action, reward, next_state, done):
-        self.buffer.push(state, action, reward, next_state, done)
+        self.buffer.push(state, action, reward, next_state, float(done))
 
     def update(self):
         if len(self.buffer) < self.batch_size:

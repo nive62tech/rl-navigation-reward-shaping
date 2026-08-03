@@ -1,10 +1,14 @@
 """
-env.py - Fixed Grid-World with coordinate-based observation
-Much easier for the network to learn from than one-hot encoding.
-Observation: [agent_row/N, agent_col/N, goal_row/N, goal_col/N,
-              delta_row/N, delta_col/N] = 6 values
+env.py
+======
+Grid-World environment built on the same logic as test_basic.py
+which confirmed DQN learns correctly on a simple grid.
+
+Grid: 10x10, 10% obstacles, no slip, max 300 steps.
+Observation: 6 normalised values (same as test_basic.py).
 """
 import numpy as np
+import random
 
 
 class GridWorld:
@@ -14,38 +18,38 @@ class GridWorld:
         self.rho       = obstacle_density
         self.slip_prob = slip_prob
         self.max_steps = max_steps
-        self.obs_dim   = 6          # normalized coordinates only
+        self.obs_dim   = 6
         self.n_actions = 4
         self.start     = (0, 0)
         self.goal      = (self.N - 1, self.N - 1)
-        self.rng       = np.random.default_rng(seed)
+
+        # Use Python random for obstacle placement so seed is simple
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
+
         self._place_obstacles()
 
     def _place_obstacles(self):
-        n_obs      = int(self.rho * self.N * self.N)
+        n_obs = int(self.rho * self.N * self.N)
         candidates = [
             (r, c)
             for r in range(self.N)
             for c in range(self.N)
             if (r, c) != self.start and (r, c) != self.goal
         ]
-        if n_obs > 0 and candidates:
-            idx = self.rng.choice(len(candidates),
-                                  size=min(n_obs, len(candidates)),
-                                  replace=False)
-            self.obstacles = {candidates[i] for i in idx}
-        else:
-            self.obstacles = set()
+        chosen = random.sample(candidates, min(n_obs, len(candidates)))
+        self.obstacles = set(chosen)
 
     def reset(self):
-        self.agent = self.start
+        self.agent = list(self.start)
         self.steps = 0
-        return self._observe()
+        return self._obs()
 
-    def _observe(self):
-        r,  c  = self.agent
+    def _obs(self):
+        r, c   = self.agent
         gr, gc = self.goal
-        N = self.N
+        N      = self.N
         return np.array([
             r  / N,
             c  / N,
@@ -56,26 +60,31 @@ class GridWorld:
         ], dtype=np.float32)
 
     def step(self, action):
-        if self.slip_prob > 0 and self.rng.random() < self.slip_prob:
-            action = int(self.rng.integers(4))
+        # Optional slip
+        if self.slip_prob > 0 and random.random() < self.slip_prob:
+            action = random.randint(0, 3)
 
-        dr, dc = [(-1,0),(1,0),(0,-1),(0,1)][action]
-        nr = int(np.clip(self.agent[0] + dr, 0, self.N - 1))
-        nc = int(np.clip(self.agent[1] + dc, 0, self.N - 1))
-        self.agent = (nr, nc)
+        r, c = self.agent
+        if   action == 0: r = max(0,          r - 1)
+        elif action == 1: r = min(self.N - 1, r + 1)
+        elif action == 2: c = max(0,          c - 1)
+        elif action == 3: c = min(self.N - 1, c + 1)
+
+        self.agent = [r, c]
         self.steps += 1
 
-        if self.agent == self.goal:
-            return self._observe(), +1.0, True, 'goal'
-        if self.agent in self.obstacles:
-            return self._observe(), -1.0, True, 'collision'
+        if (r, c) == self.goal:
+            return self._obs(), +1.0, True, 'goal'
+        if (r, c) in self.obstacles:
+            return self._obs(), -1.0, True, 'collision'
         if self.steps >= self.max_steps:
-            return self._observe(), 0.0, True, 'timeout'
-        return self._observe(), 0.0, False, 'step'
+            return self._obs(), 0.0, True, 'timeout'
+        return self._obs(), 0.0, False, 'step'
 
     def manhattan_to_goal(self):
-        return (abs(self.agent[0] - self.goal[0]) +
-                abs(self.agent[1] - self.goal[1]))
+        r, c   = self.agent
+        gr, gc = self.goal
+        return abs(r - gr) + abs(c - gc)
 
     def manhattan_to_nearest_obstacle(self):
         if not self.obstacles:
