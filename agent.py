@@ -83,7 +83,7 @@ class DQNAgent:
         self.target.load_state_dict(self.online.state_dict())
         self.target.eval()
 
-        self.optimizer = optim.Adam(self.online.parameters(), lr=lr)
+        self.optimizer = optim.Adam(self.online.parameters(), lr=3e-3)
         self.criterion = nn.MSELoss()
         self.buffer    = ReplayBuffer(buffer_size)
 

@@ -11,8 +11,8 @@ import numpy as np
 
 
 class GridWorld:
-    def __init__(self, grid_size=10, obstacle_density=0.10,
-                 slip_prob=0.05, max_steps=300, seed=None):
+    def __init__(self, grid_size=7, obstacle_density=0.05,
+                 slip_prob=0, max_steps=200, seed=None):
         self.N         = grid_size
         self.rho       = obstacle_density
         self.slip_prob = slip_prob

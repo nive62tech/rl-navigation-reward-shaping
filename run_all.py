@@ -41,7 +41,7 @@ CONFIGS = [
 ]
 
 N_SEEDS    = 30
-N_EPISODES = 1000
+N_EPISODES = 800
 
 # ═══════════════════════════════════════════════════════════════════
 # MAIN EXPERIMENT
