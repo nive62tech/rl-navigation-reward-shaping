@@ -95,5 +95,5 @@ if __name__ == '__main__':
     print("Last 5 rolling success rates:", lc[-5:].round(2))
 
     next_state, r_base, done, info = env.step(action)
-print(f"r_base={r_base}")  # ADD THIS
+    print(f"r_base={r_base}")  # ADD THIS
 t += 1
