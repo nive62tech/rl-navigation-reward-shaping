@@ -93,3 +93,7 @@ if __name__ == '__main__':
     ce, lc, losses, mse, scr = run_one('dqn', 'baseline', seed=1)
     print(f"CE={ce}  MSE={mse:.4f}  SCR={scr:.2f}")
     print("Last 5 rolling success rates:", lc[-5:].round(2))
+
+next_state, r_base, done, info = env.step(action)
+print(f"r_base={r_base}")  # ADD THIS
+t += 1
