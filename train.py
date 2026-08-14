@@ -96,4 +96,4 @@ if __name__ == '__main__':
 
     next_state, r_base, done, info = env.step(action)
     print(f"r_base={r_base}")  # ADD THIS
-t += 1
+    t += 1
